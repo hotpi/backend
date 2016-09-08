@@ -4,7 +4,7 @@
   "description": "Patient information system for my bachelor's thesis",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node build/backend.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,18 +23,35 @@
   "author": "juanecabellob",
   "license": "MIT",
   "dependencies": {
-    "babel-plugin-transform-object-rest-spread": "^6.8.0",
     "babel-polyfill": "^6.9.1",
+    "bluebird": "^3.1.4",
     "body-parser": "^1.15.2",
+    "compression": "^1.6.1",
+    "cookie-parser": "^1.4.1",
+    "cors": "^2.7.1",
+    "debug": "^2.2.0",
     "express": "^4.14.0",
+    "express-jwt": "3.4.0",
+    "express-validation": "^1.0.1",
+    "express-winston": "^2.0.0",
+    "helmet": "2.1.1",
+    "http-status": "^0.2.0",
+    "joi": "^9.0.4",
+    "jsonwebtoken": "7.1.9",
     "lodash": "^4.13.1",
+    "method-override": "^2.3.6",
+    "mongoose": "^4.3.7",
+    "morgan": "1.7.0",
     "node-uuid": "^1.4.7",
-    "offline-js": "^0.7.18"
+    "source-map-support": "^0.4.2",
+    "winston": "^2.2.0"
   },
   "devDependencies": {
+    "babel-cli": "6.5.1",
     "babel-core": "^6.10.4",
     "babel-loader": "^6.2.4",
     "babel-plugin-lodash": "^3.2.6",
+    "babel-plugin-transform-object-rest-spread": "^6.8.0",
     "babel-preset-es2015": "^6.9.0",
     "concurrently": "^2.2.0",
     "css-loader": "^0.23.1",
