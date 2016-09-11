@@ -85,8 +85,8 @@ NoteLineSchema.statics = {
   get(id) {
     return this.find({ ID: id })
       .execAsync().then((noteLine) => {
-        if (noteLine) {
-          return noteLine;
+        if (noteLine[0]) {
+          return noteLine[0];
         }
         const err = new APIError('No such noteLine exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
@@ -96,13 +96,13 @@ NoteLineSchema.statics = {
   getNoteLineText(id) {
     return this.find({ ID: id })
       .execAsync().then( (noteLine) => {
-        if (noteLine) {
-          return noteLine.text;
+        if (noteLine[0]) {
+          return noteLine[0].text;
         }
         const err = new APIError('No such noteLine exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       })
-  }
+  },
 
   /**
    * List noteLines in descending order of 'createdAt' timestamp.
@@ -116,20 +116,18 @@ NoteLineSchema.statics = {
       .skip(skip)
       .limit(limit)
       .execAsync();
-  }
+  },
 
   listOfNoteNoteLines(ids) {
-    return new Promise.resolve().then(() => {
-        return ids.map( id => {
-        this.findById(id)
-        .execAsync().then( (noteline) => {
-          if (noteline) {
-            return noteline;
-          }
-          const err = new APIError('No such noteline exists!', httpStatus.NOT_FOUND);
-          return Promise.reject(err);
-        })
-      })
+    return this.find({ 
+      ID: { $in: ids }
+    })
+    .execAsync().then( (notelines) => {
+      if (notelines) {
+        return notelines;
+      }
+      const err = new APIError('No such noteline exists!', httpStatus.NOT_FOUND);
+      return Promise.reject(err);
     })
   }
 };
@@ -137,4 +135,4 @@ NoteLineSchema.statics = {
 /**
  * @typedef NoteLine
  */
-export default mongoose.model('NoteLine', UserSchema);
+export default mongoose.model('NoteLine', NoteLineSchema);

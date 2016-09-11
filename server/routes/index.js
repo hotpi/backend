@@ -1,6 +1,6 @@
 import express from 'express';
 
-//import userRoutes from './user';
+import syncRoutes from './sync';
 //import authRoutes from './auth'; /* Not needed */
 
 const router = express.Router();	// eslint-disable-line new-cap
@@ -9,6 +9,8 @@ const router = express.Router();	// eslint-disable-line new-cap
 router.get('/health-check', (req, res) =>
   res.send('OK')
 );
+
+router.use('/sync', syncRoutes)
 
 // mount user routes at /users
 //router.use('/users', userRoutes);

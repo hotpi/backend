@@ -7,7 +7,7 @@ import EventEmitter from 'events';
 
 const config = require('../../config/env');
 
-const broadcaster = new EventEmitter
+const broadcaster = new EventEmitter()
 var uid = 0
 var history = []
 
@@ -15,12 +15,22 @@ const acknowledge = {
   acknowledge: true
 }
 
+const timeout = (ms, promise) => {
+  return new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      resolve(new Response(JSON.stringify({empty: 'true'}), {ok: true}))
+    }, ms)
+    promise.then(resolve, reject)
+  })
+}
+
 const getBroadcast = () => {
-  return new Promise( (resolve, reject) => {
+  return timeout(10000, new Promise( (resolve, reject) => {
+    // set timeout
     broadcaster.on('opReceived', (op) => {
       resolve(op)
     }) 
-  }
+  }))
 }
 
 function receiveOp(req, res, next) {
@@ -33,13 +43,12 @@ function receiveOp(req, res, next) {
 
   apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
   history.push(transformedOperation)
-  handleBroadcast(transformedOperation)
-  broadcaster.emit('opReceived', op)
+  broadcaster.emit('opReceived', transformedOperation)
+  res.send({'ok': 'ok'})
 }
 
 function status(req, res, next) {
-  const { revisionNr } = req.params
-  const { uid } = req.body
+  const { revisionNr, uid } = req.params
 
   if (revisionNr === history.length) {
     getBroadcast().then((op) => {
@@ -49,11 +58,13 @@ function status(req, res, next) {
         res.json(op)
       }
     })
+
+    return;
   } 
 }
 
 function subscribe(req, res, next) {
-  res.json(++uid)
+  res.json({ uid: ++uid })
 }
 
 export default { receiveOp, status, subscribe };

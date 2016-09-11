@@ -65,13 +65,13 @@ const PatientSchema = new mongoose.Schema({
 /**
  * Methods
  */
-Patient.method({
+PatientSchema.method({
 });
 
 /**
  * Statics
  */
-Patient.statics = {
+PatientSchema.statics = {
   /**
    * Get patient
    * @param {ObjectId} id - The objectId of patient.
@@ -80,8 +80,8 @@ Patient.statics = {
   get(id) {
     return this.find({ ID: id })
       .execAsync().then((patient) => {
-        if (patient) {
-          return patient;
+        if (patient[0]) {
+          return patient[0];
         }
         const err = new APIError('No such patient exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
@@ -91,13 +91,14 @@ Patient.statics = {
   getPatientNotes(id) {
     return this.find({ ID: id })
       .execAsync().then((patient) => {
-        if (patient) {
-          return patient.notes;
+        console.log(patient[0].notes)
+        if (patient[0]) {
+          return patient[0].notes;
         }
         const err = new APIError('No such patient exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       });
-  }
+  },
 
 
   /**
@@ -107,6 +108,7 @@ Patient.statics = {
    * @returns {Promise<Patient[]>}
    */
   list({ skip = 0 } = {}) {
+    console.log('list')
     return this.find()
       .sort({ ID: 1 })
       .skip(skip)
@@ -117,4 +119,4 @@ Patient.statics = {
 /**
  * @typedef Patient
  */
-export default mongoose.model('Patient', Patient);
+export default mongoose.model('Patient', PatientSchema);

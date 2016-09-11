@@ -20,7 +20,7 @@ const NoteSchema = new mongoose.Schema({
     type: Array,
     required: true,
     default: []
-  }
+  },
   updatedAt: {
     type: Date,
     default: Date.now
@@ -56,8 +56,8 @@ NoteSchema.statics = {
   get(id) {
     return this.find({ ID: id })
       .execAsync().then((note) => {
-        if (note) {
-          return note;
+        if (note[0]) {
+          return note[0];
         }
         const err = new APIError('No such note exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
@@ -67,14 +67,14 @@ NoteSchema.statics = {
   getNoteNoteLines(id) {
     return this.find({ ID: id })
       .execAsync().then((note) => {
-        if (note) {
-          return note.noteLines;
+        if (note[0]) {
+          return note[0].noteLines;
         }
         const err = new APIError('No such note exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       });
   }
-
+,
   /**
    * List notes in descending order of 'createdAt' timestamp.
    * @param {number} skip - Number of notes to be skipped.
@@ -88,18 +88,17 @@ NoteSchema.statics = {
   },
 
   listOfPatientNotes(ids) {
-    return Promise.resolve().then(() => {
-        return ids.map( id => {
-        this.find({ ID: id })
-        .execAsync().then( (note) => {
-          if (note) {
-            return note;
-          }
-          const err = new APIError('No such note exists!', httpStatus.NOT_FOUND);
-          return Promise.reject(err);
-        })
+    console.log(ids)
+    return this.find({ 
+        ID: { $in: ids }
       })
-    })
+      .execAsync().then( (notes) => {
+        if (notes) {
+          return notes;
+        }
+        const err = new APIError('No such note exists!', httpStatus.NOT_FOUND);
+        return Promise.reject(err);
+      })
   }
 };
 
