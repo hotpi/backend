@@ -91,7 +91,6 @@ PatientSchema.statics = {
   getPatientNotes(id) {
     return this.find({ ID: id })
       .execAsync().then((patient) => {
-        console.log(patient[0].notes)
         if (patient[0]) {
           return patient[0].notes;
         }
@@ -107,11 +106,10 @@ PatientSchema.statics = {
    * @param {number} limit - Limit number of patients to be returned.
    * @returns {Promise<Patient[]>}
    */
-  list({ skip = 0 } = {}) {
-    console.log('list')
-    return this.find()
+  list() {
+    return this.find({}, { _id: 0 })
       .sort({ ID: 1 })
-      .skip(skip)
+      .select('ID lastName firstName bedNumber clinic station admissionDate dischargeDate birthday notes createdAt updatedAt')
       .execAsync();
   }
 };

@@ -81,9 +81,10 @@ NoteSchema.statics = {
    * @param {number} limit - Limit number of notes to be returned.
    * @returns {Promise<Note[]>}
    */
-  list({ skip = 0, limit = 50 } = {}) {
-    return this.find()
+  list() {
+    return this.find({}, { _id: 0 })
       .sort({ createdAt: -1 })
+      .select('ID type noteLines createdAt updatedAt')
       .execAsync();
   },
 

@@ -110,11 +110,12 @@ NoteLineSchema.statics = {
    * @param {number} limit - Limit number of noteLines to be returned.
    * @returns {Promise<NoteLine[]>}
    */
-  list({ skip = 0, limit = 50 } = {}) {
-    return this.find()
+  list() {
+    console.log('notelines list')
+    console.log(this.find())
+    return this.find({}, { _id: 0 })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      .select('ID text important highlight createdAt updateAt')
       .execAsync();
   },
 

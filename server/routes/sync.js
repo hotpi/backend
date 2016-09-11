@@ -21,6 +21,9 @@ router.route('/status/:uid/:revisionNr')
 
 router.route('/subscribe')
   .get(otCtrl.subscribe)
+
+router.route('/initialState')
+  .get(otCtrl.initialState)
 /** GET /api/auth/random-number - Protected route,
  * needs token returned by the above as header. Authorization: Bearer {token} */
 /*router.route('/random-number')
