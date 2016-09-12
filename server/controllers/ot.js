@@ -14,9 +14,25 @@ const config = require('../../config/env');
 const broadcaster = new EventEmitter()
 var uid = 0
 var history = []
+const activeListeners = []
 
 const acknowledge = {
   acknowledge: true
+}
+
+function receiveOp(req, res, next) {
+  const { revisionNr, operation } = req.body
+  var transformedOperation = operation
+  
+  if (revisionNr < history.length) {
+    transformedOperation = transform(history.slice(revisionNr), operation)
+  }
+
+  apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
+  history.push(transformedOperation)
+  console.log('-----------history------------')
+  console.log(history)
+  res.send({'ok': 'ok'})
 }
 
 const timeout = (ms, promise) => {
@@ -37,36 +53,46 @@ const getBroadcast = () => {
   }))
 }
 
-function receiveOp(req, res, next) {
-  const { revisionNr, operation } = req.body
-  var transformedOperation = operation
-  
-  if (revisionNr < history.length) {
-    transformedOperation = transform(history.slice(revisionNr), operation)
-  }
-
-  apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
-  history.push(transformedOperation)
-  broadcaster.emit('opReceived', transformedOperation)
-  res.send({'ok': 'ok'})
-}
-
 function status(req, res, next) {
   const { revisionNr, uid } = req.params
+  
+  // if (activeListeners.indexOf(uid) !== -1) {
+    
+  //   setTimeout(() => res.json({ empty: true }), 10000)
+  //   return;
+  // }
 
-  if (revisionNr === history.length) {
-    getBroadcast().then((op) => {
-      if (typeof op.empty === 'undefined'){
-        return res.json({ empty: true })
-      }
+  // activeListeners.push(uid)
 
-      if (op.origin === uid) {
+  // if (revisionNr === history.length) {
+  //   getBroadcast().then((op) => {
+  //     activeListeners.splice(activeListeners.indexOf(uid), 1)
+
+  //     if (typeof op.empty === 'undefined'){
+  //       return res.json({ empty: true })
+  //     }
+
+  //     if (op.origin === uid) {
+  //       res.json(acknowledge)
+  //     } else {
+  //       res.json(op)
+  //     }
+  //   })
+  // }
+
+  if (revisionNr < history.length) {
+    var op = history[revisionNr]
+    if (op.origin === uid) {
         res.json(acknowledge)
       } else {
         res.json(op)
       }
-    })
+      return;
   } 
+
+  setTimeout(() => res.json({ empty: true }), 10000)
+  return;
+
 }
 
 function initialState(req, res, next) {
@@ -77,7 +103,6 @@ function initialState(req, res, next) {
       return NoteLine.list().then((noteLines) => ({ patients, notes, noteLines }))
     })
     .then(({ patients, notes, noteLines }) => {
-      console.log(patients, notes, noteLines)
       patients = {...formatResponse(patients)}
       notes = {...formatResponse(notes)}
       noteLines = {...formatResponse(noteLines)}
@@ -92,16 +117,15 @@ function initialState(req, res, next) {
 
 function formatResponse(objectToFormat) {
   const formattedArray = objectToFormat.map( object => {
-    const { ID } = object
-    console.log(object)
-    
+    const { ID } = object    
     return object
   })
   const formattedObject = {}
+
   formattedArray.forEach((object) => {
     formattedObject[object.ID] = { ...object._doc }
   })
-  console.log(formattedObject)
+
   return formattedObject;
 }
 

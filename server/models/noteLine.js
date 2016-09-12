@@ -13,8 +13,7 @@ const NoteLineSchema = new mongoose.Schema({
   },
   text: {
     type: String,
-    default: '',
-    required: true
+    default: ''
   },
   important: {
     set: {
@@ -111,8 +110,6 @@ NoteLineSchema.statics = {
    * @returns {Promise<NoteLine[]>}
    */
   list() {
-    console.log('notelines list')
-    console.log(this.find())
     return this.find({}, { _id: 0 })
       .sort({ createdAt: -1 })
       .select('ID text important highlight createdAt updateAt')

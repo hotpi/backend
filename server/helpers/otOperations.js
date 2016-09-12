@@ -4,22 +4,42 @@ import xformT from './xformT';
 import Patient from '../models/patient';
 import Note from '../models/note';
 import NoteLine from '../models/noteLine';
+import EventEmitter from 'events';
 
 const tree = {}
+var wait = false
+const waitingList = []
+const lock = new EventEmitter()
+
+lock.on('locked', (operationFunction, receivedOp) => {
+  console.log('waiting')
+  waitingList.push([operationFunction, receivedOp])
+})
+
+lock.on('unlocked', () => {
+  wait = false
+  console.log('------waiting List size------')
+  console.log(waitingList)
+  if (waitingList.length > 0) {
+    console.log('unlocked, applying next op')
+    let next = waitingList.shift()
+    next[0] === 'insert' ? 
+      insertNode(next[1]) :
+      deleteNode(next[1])    
+  }
+})
 
 export function transform(operations, receivedOp) {
-  console.log('transform')
-  receivedOp = operations.reduce( (prev, next) => {
+  var transformedOperation = operations.reduce( (prev, next) => {
     return xformT(prev, next);
   }, receivedOp)
+  console.log(receivedOp)
 
-  return receivedOp[0];
-  
+  return transformedOperation[0];
+
 }
 
 export function apply(operationFunction) {
-  console.log('apply')
-
   if (typeof operationFunction !== 'function') {
     return 'Error: first argument of apply must be a function';
   }
@@ -27,43 +47,89 @@ export function apply(operationFunction) {
   return operationFunction; 
 }
 
-export function insertNode(receivedOp) {
-  console.log('insert')
+export function getAccessPath(objectAccessPath) {
+  if (objectAccessPath.length === 1) {
+    return [objectAccessPath[0]['0']];
+  } else if (objectAccessPath.length === 2) {
+    return [objectAccessPath[0]['0'], objectAccessPath[1]['1']]
+  } else if (objectAccessPath.length === 3) {
+    return [objectAccessPath[0]['0'], objectAccessPath[1]['1'], objectAccessPath[2]['2']]
+  }
 
+  return [objectAccessPath[0]['0'], objectAccessPath[1]['1'], objectAccessPath[2]['2'], objectAccessPath[3]['3']]
+}
+
+export function insertNode(receivedOp) {
   const { accessPath, node } = receivedOp 
-  let insertAt = jumpToAccessPath(accessPath)
+  console.log('------wait--------')
+  console.log(wait)
+
+  if (wait) {
+    lock.emit('locked', 'insert', receivedOp)
+    return true;
+  }
+
+  var newAccessPath = getAccessPath(accessPath) 
+  wait = true;
+  
+  let insertAt = jumpToAccessPath(newAccessPath)
     .then((treeLevel) => {
+      console.log('-----treeLevel------')
+      console.log(treeLevel)
+
       let applied = [
-        ...treeLevel.slice(0, accessPath[receivedOp.accessPath.length-1] + 1),
+        ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
         node,
-        ...treeLevel.slice(accessPath[receivedOp.accessPath.length-1] + 1),
+        ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
       ]
+
+      console.log('-------applied op-------')
+      console.log(receivedOp)
+      console.log('-----after applied------')
+      console.log(applied)
       // translate back to the type of collection
-      return saveChanges(accessPath, applied, 'insert', node)
+      return saveChanges(newAccessPath, applied, 'insert', node)
     })
-    .then((something) => {
-      console.log(something)
+    .then((promises) => {
+      console.log('-------after save promises--------')
+      console.log(promises)
+      Promise.all(promises).then( () => {
+        lock.emit('unlocked')
+      }).catch((err) => console.log(`something happened: ${`err`}`))
     })
   // save to database
   return true; 
 } 
 
 export function deleteNode(receivedOp) {
-  console.log('delete')
   const { accessPath } = receivedOp 
-  let deleteAt = jumpToAccessPath(accessPath)
+
+  if (wait) {
+    lock.emit('locked', 'delete', receivedOp)
+    return true;
+  }
+
+  var newAccessPath = getAccessPath(accessPath)
+  wait = true;
+
+  let deleteAt = jumpToAccessPath(newAccessPath)
     .then((treeLevel) => {
-      let deletedNode = treeLevel[accessPath[accessPath.length-1]]
+      let deletedNode = treeLevel[newAccessPath[newAccessPath.length-1]]
       
       let applied = [
-        ...treeLevel.slice(0, accessPath[accessPath.length-1]),
-        ...treeLevel.slice(accessPath[accessPath.length-1] + 1)
+        ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
+        ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
         ]
       
-      return saveChanges(accessPath, applied, 'delete', deletedNode)
+      return saveChanges(newAccessPath, applied, 'delete', deletedNode)
     })
-    .then(({ updated, saved }) => {
-      console.log(updated, saved)
+    .then(promises => {
+      console.log('------after delete promises------')
+      console.log(promises)
+      Promise.all(promises).then( () => {
+
+        lock.emit('unlocked')
+      })
     })
   // translate back to the type of collection
   // save to database
@@ -72,15 +138,32 @@ export function deleteNode(receivedOp) {
 }
 
 function saveChanges(accessPath, changes, operation, node) {
-  console.log('save')
-  getPatientList().then(patients => {
-    switch (accessPath.length) {
-      case 1:
+   return getPatientList().then(patients => {
+      if (accessPath.length > 1) {
+        return getPatientNotes(patients[accessPath[0]].ID).then(notes => ({ patients, notes }))      
+      }
+      return { patients }
+    })
+    .then(({ patients, notes }) => {
+      if (accessPath.length > 2) {
+        return getNoteNoteLines(notes[accessPath[1]].ID).then(noteLines => ({ patients, notes, noteLines }))
+      }
+      if (accessPath.length > 1) {
+        return { patients, notes }
+      }
+
+      return { patients }
+    })
+    .then(({ patients, notes, noteLines }) => {
+      if (accessPath.length === 1) {
         var updatePromise = Patient.update({}, changes, { multi: true, upsert: true, overwrite: true }).execAsync()
 
-        return updatePromise
-      case 2:
-        var updatePromise = Patient.update({ ID: patients[accessPath[0]].ID }, { notes: changes }, { overwrite: true }).execAsync()
+        return [updatePromise];
+      } else if (accessPath.length === 2) {
+
+        var updatePromise = Patient.update({ ID: patients[accessPath[0]].ID }, { 
+          notes: changes.map(note => note.ID) 
+        }).execAsync()
         
         switch (operation) {  
           case  'insert':
@@ -90,14 +173,18 @@ function saveChanges(accessPath, changes, operation, node) {
 
             var savePromise = note.saveAsync()
 
-            return { savePromise, updatePromise }
+            return [ updatePromise, savePromise ];
           case 'delete':
             var deletedPromise = Note.remove({ ID: node.ID }).execAsync()
             
-            return { deletedPromise, updatePromise }
+            return [ updatePromise, deletedPromise ];
         } 
-      case 3:
-        var updatePromise = Note.update({ ID: getPatientNotes(getPatientList()[accessPath[0]].ID)[accessPath[1]].ID }, { noteLines: changes }, { overwrite: true }).execAsync()
+        
+      } else if (accessPath.length === 3) {
+        console.log('saving Changes of a note')
+        var updatePromise = Note.update({ ID: notes[accessPath[1]].ID }, { 
+          noteLines: changes.map(noteLine => noteLine.ID)
+        }).execAsync()
 
         switch (operation) {
           case 'insert':
@@ -105,27 +192,34 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
+            console.log(noteLine)
+
             var savePromise = noteLine.saveAsync()
 
-            return { savePromise, updatePromise }
+            return [ updatePromise, savePromise ];
           case 'delete':
             var deletedPromise = NoteLine.remove({ ID: node.ID }).execAsync()
             
-            return { deletedPromise, updatePromise }
+            return [ updatePromise, deletedPromise ]
         }
-
-
-      case 4:
-        var updatePromise = NoteLine.update({ ID: getNoteNoteLines(getPatientNotes(getPatientList()[accessPath[0]].ID)[accessPath[1]].ID)[accessPath[3]].ID }, { text: changes }, { overwrite: true }).execAsync()
         
-        return { updatePromise }
-    }
-  })
+      } else if (accessPath.length === 4) {
+        var newText = changes.reduce((prev, curr) => {
+          return prev+curr
+        }, '')
+        var updatePromise = NoteLine.update({ ID: noteLines[accessPath[2]].ID }, {
+          text: newText 
+        }).execAsync()
+        
+        return [ updatePromise ]
+
+      }       
+    })
 }
+
 
 // return level of the tree with their elements AND the name of its collection
 function jumpToAccessPath(accessPath) {
-  console.log('jump')
   var patients = []
   var notes = []
   var noteLines = []
@@ -133,21 +227,23 @@ function jumpToAccessPath(accessPath) {
   
   return getPatientList()
     .then((patients) => {
-      console.log(accessPath)
         if (accessPath.length > 1) {
-         let prom = getPatientNotes(patients[accessPath[0]].ID).then((notes) => {
-          console.log(notes)
-          return { patients, notes }
-        })
-         console.log(prom)
-         return prom
+          let prom = getPatientNotes(patients[accessPath[0]].ID).then((notes) => {
+            console.log('------------------patient-------------')
+            console.log(patients[accessPath[0]])
+            console.log('-------------------returning notes --------------')
+            return { patients, notes }
+          })
+          return prom
         }
 
         return { patients }
       })
     .then(({ patients, notes }) => {
+        console.log('-------------------jumpToAccessPath notes---------------')
         console.log(notes)
-
+        console.log('------------------------jumpToAccessPath in accessPath-------------')
+        console.log(accessPath)
         if (accessPath.length > 2) {
           return getNoteNoteLines(notes[accessPath[1]].ID).then((noteLines) => ({ patients, notes, noteLines}))
         }
@@ -208,36 +304,36 @@ function jumpToAccessPath(accessPath) {
 }
 
 function getPatientList() {
-  console.log('patientList')
-  const patientPromise = Patient.list().then((patients) => patients)
+  const patientPromise = Patient.list().then((patients) => {
+    return patients
+  })
   
   return patientPromise;
 }
 
 function getPatientNotes(patientId) {
-  console.log('patientNotes')
   const notesPromise = Patient.getPatientNotes(patientId).then((notes) => {
     return Note.listOfPatientNotes(notes);
   })
     .then((notes) => {
-      console.log(notes)
-      return notes
+      return notes;
     })
     
   return notesPromise;
 }
 
 function getNoteNoteLines(noteId) {
-  console.log('noteNoteLines')
-  const noteLinesPromise = Note.getNoteNoteLines(noteId).then((notelines) => {
+  const noteLinesPromise = Note.getNoteNoteLines(noteId).then((noteLines) => {
     return NoteLine.listOfNoteNoteLines(noteLines);
   })
+    .then((noteLines) => {
+      return noteLines;
+    })
 
   return noteLinesPromise;
 }
 
 function getNoteLineText(noteLineId) {
-  console.log('noteLineText')
   const noteLinesTextPromise = NoteLine.getNoteLineText(noteLineId).then((text) => {
     return text;
   })

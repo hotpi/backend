@@ -89,7 +89,6 @@ NoteSchema.statics = {
   },
 
   listOfPatientNotes(ids) {
-    console.log(ids)
     return this.find({ 
         ID: { $in: ids }
       })

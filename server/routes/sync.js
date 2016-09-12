@@ -24,6 +24,11 @@ router.route('/subscribe')
 
 router.route('/initialState')
   .get(otCtrl.initialState)
+
+router.route('/test')
+  .post((req, res, next) => {
+    console.log(req.body.body.obj.array)
+  })
 /** GET /api/auth/random-number - Protected route,
  * needs token returned by the above as header. Authorization: Bearer {token} */
 /*router.route('/random-number')

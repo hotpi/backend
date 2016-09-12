@@ -7,8 +7,7 @@ export default {
       operation: Joi.object({
         origin: Joi.number().integer().required(),
         type: Joi.string().valid('insert', 'delete').required(),
-        accessPath: Joi.array().required(),
-        node: Joi.object(),
+        node: Joi.alternatives().try(Joi.object(), Joi.string()),
         action: Joi.object().required()
       }).required(),
       revisionNr: Joi.number().integer().required()
