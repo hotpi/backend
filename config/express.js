@@ -50,7 +50,7 @@ if (config.env === 'development') {
 app.use('/', routes);
 
 // if error is not an instanceOf APIError, convert it.
-app.use((err, req, res, next) => {
+/*app.use((err, req, res, next) => {
   if (err instanceof expressValidation.ValidationError) {
     // validation error contains errors which is an array of error each containing message[]
     const unifiedErrorMessage = err.errors.map(error => error.messages.join('. ')).join(' and ');
@@ -62,7 +62,7 @@ app.use((err, req, res, next) => {
   }
   return next(err);
 });
-
+*/
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
   const err = new APIError('API not found', httpStatus.NOT_FOUND);

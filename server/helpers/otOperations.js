@@ -6,35 +6,14 @@ import Note from '../models/note';
 import NoteLine from '../models/noteLine';
 import EventEmitter from 'events';
 
-const tree = {}
-var wait = false
-const waitingList = []
-const lock = new EventEmitter()
-
-lock.on('locked', (operationFunction, receivedOp) => {
-  console.log('waiting')
-  waitingList.push([operationFunction, receivedOp])
-})
-
-lock.on('unlocked', () => {
-  wait = false
-  console.log('------waiting List size------')
-  console.log(waitingList)
-  if (waitingList.length > 0) {
-    console.log('unlocked, applying next op')
-    let next = waitingList.shift()
-    next[0] === 'insert' ? 
-      insertNode(next[1]) :
-      deleteNode(next[1])    
-  }
-})
-
 export function transform(operations, receivedOp) {
-  var transformedOperation = operations.reduce( (prev, next) => {
-    return xformT(prev, next);
-  }, receivedOp)
+  console.log('--------before transformedOperation----------')
   console.log(receivedOp)
-
+  var transformedOperation = operations.reduce( (prev, next) => {
+    return xformT(prev[0], next);
+  }, [receivedOp, null])
+  console.log('--------after transformedOperation----------')
+  console.log(transformedOperation)
   return transformedOperation[0];
 
 }
@@ -48,6 +27,7 @@ export function apply(operationFunction) {
 }
 
 export function getAccessPath(objectAccessPath) {
+  console.log(objectAccessPath)
   if (objectAccessPath.length === 1) {
     return [objectAccessPath[0]['0']];
   } else if (objectAccessPath.length === 2) {
@@ -61,18 +41,10 @@ export function getAccessPath(objectAccessPath) {
 
 export function insertNode(receivedOp) {
   const { accessPath, node } = receivedOp 
-  console.log('------wait--------')
-  console.log(wait)
-
-  if (wait) {
-    lock.emit('locked', 'insert', receivedOp)
-    return true;
-  }
-
+  console.log(receivedOp)
   var newAccessPath = getAccessPath(accessPath) 
-  wait = true;
   
-  let insertAt = jumpToAccessPath(newAccessPath)
+  return jumpToAccessPath(newAccessPath)
     .then((treeLevel) => {
       console.log('-----treeLevel------')
       console.log(treeLevel)
@@ -83,36 +55,22 @@ export function insertNode(receivedOp) {
         ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
       ]
 
-      console.log('-------applied op-------')
-      console.log(receivedOp)
-      console.log('-----after applied------')
-      console.log(applied)
+      //console.log('-------applied op-------')
+      //console.log(receivedOp)
+      //console.log('-----after applied------')
+      //console.log(applied)
       // translate back to the type of collection
       return saveChanges(newAccessPath, applied, 'insert', node)
     })
-    .then((promises) => {
-      console.log('-------after save promises--------')
-      console.log(promises)
-      Promise.all(promises).then( () => {
-        lock.emit('unlocked')
-      }).catch((err) => console.log(`something happened: ${`err`}`))
-    })
-  // save to database
-  return true; 
+    
 } 
 
 export function deleteNode(receivedOp) {
   const { accessPath } = receivedOp 
 
-  if (wait) {
-    lock.emit('locked', 'delete', receivedOp)
-    return true;
-  }
-
   var newAccessPath = getAccessPath(accessPath)
-  wait = true;
 
-  let deleteAt = jumpToAccessPath(newAccessPath)
+  return jumpToAccessPath(newAccessPath)
     .then((treeLevel) => {
       let deletedNode = treeLevel[newAccessPath[newAccessPath.length-1]]
       
@@ -123,18 +81,6 @@ export function deleteNode(receivedOp) {
       
       return saveChanges(newAccessPath, applied, 'delete', deletedNode)
     })
-    .then(promises => {
-      console.log('------after delete promises------')
-      console.log(promises)
-      Promise.all(promises).then( () => {
-
-        lock.emit('unlocked')
-      })
-    })
-  // translate back to the type of collection
-  // save to database
-
-  return true;
 }
 
 function saveChanges(accessPath, changes, operation, node) {
@@ -158,7 +104,7 @@ function saveChanges(accessPath, changes, operation, node) {
       if (accessPath.length === 1) {
         var updatePromise = Patient.update({}, changes, { multi: true, upsert: true, overwrite: true }).execAsync()
 
-        return [updatePromise];
+        return [updatePromise, new Promise.resolve()];
       } else if (accessPath.length === 2) {
 
         var updatePromise = Patient.update({ ID: patients[accessPath[0]].ID }, { 
@@ -171,6 +117,9 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
+            //console.log('------------ new note ------------')
+            //console.log(note)
+
             var savePromise = note.saveAsync()
 
             return [ updatePromise, savePromise ];
@@ -181,7 +130,7 @@ function saveChanges(accessPath, changes, operation, node) {
         } 
         
       } else if (accessPath.length === 3) {
-        console.log('saving Changes of a note')
+        //console.log('saving Changes of a note')
         var updatePromise = Note.update({ ID: notes[accessPath[1]].ID }, { 
           noteLines: changes.map(noteLine => noteLine.ID)
         }).execAsync()
@@ -192,7 +141,7 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
-            console.log(noteLine)
+            //console.log(noteLine)
 
             var savePromise = noteLine.saveAsync()
 
@@ -211,7 +160,7 @@ function saveChanges(accessPath, changes, operation, node) {
           text: newText 
         }).execAsync()
         
-        return [ updatePromise ]
+        return [ updatePromise, new Promise.resolve() ]
 
       }       
     })
@@ -229,9 +178,9 @@ function jumpToAccessPath(accessPath) {
     .then((patients) => {
         if (accessPath.length > 1) {
           let prom = getPatientNotes(patients[accessPath[0]].ID).then((notes) => {
-            console.log('------------------patient-------------')
-            console.log(patients[accessPath[0]])
-            console.log('-------------------returning notes --------------')
+            //console.log('------------------patient-------------')
+            //console.log(patients[accessPath[0]])
+            //console.log('-------------------returning notes --------------')
             return { patients, notes }
           })
           return prom
@@ -240,10 +189,10 @@ function jumpToAccessPath(accessPath) {
         return { patients }
       })
     .then(({ patients, notes }) => {
-        console.log('-------------------jumpToAccessPath notes---------------')
-        console.log(notes)
-        console.log('------------------------jumpToAccessPath in accessPath-------------')
-        console.log(accessPath)
+        //console.log('-------------------jumpToAccessPath notes---------------')
+        //console.log(notes)
+        //console.log('------------------------jumpToAccessPath in accessPath-------------')
+        //console.log(accessPath)
         if (accessPath.length > 2) {
           return getNoteNoteLines(notes[accessPath[1]].ID).then((noteLines) => ({ patients, notes, noteLines}))
         }

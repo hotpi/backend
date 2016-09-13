@@ -12,85 +12,105 @@ import NoteLine from '../models/noteLine';
 const config = require('../../config/env');
 
 const broadcaster = new EventEmitter()
+const lock = new EventEmitter()
+
 var uid = 0
 var history = []
-const activeListeners = []
+const pendingOperations = []
+var wait = false
 
 const acknowledge = {
   acknowledge: true
 }
 
+const notify = (operation, uid, res) => {
+  if (!res.headersSent) {
+    /*console.log('-------sending op---------')
+    console.log('----------------')
+    console.log('----------------')
+    console.log('----------------')
+    console.log(operation)
+    console.log(history)*/
+    if (operation.origin === uid) {
+      res.json(acknowledge)
+    } else {
+      res.json(operation)
+    }
+    
+    return;
+  }
+}
+
+lock.on('unlocked', (operation) => {
+  //console.log('------pending operations list------')
+  //console.log(pendingOperations)
+  if (pendingOperations.length > 0) {
+    //console.log('unlocked, applying next op')
+    let next = pendingOperations.shift()
+    apply(next.type === 'insert' ? insertNode : deleteNode)(operation)    
+  }
+  //console.log('---------------wait-------------')
+  wait = pendingOperations.length !== 0
+  //console.log(wait)
+})
+
 function receiveOp(req, res, next) {
   const { revisionNr, operation } = req.body
   var transformedOperation = operation
-  
+
+  //console.log('--------------operation received---------------')
+  //console.log(operation)
   if (revisionNr < history.length) {
     transformedOperation = transform(history.slice(revisionNr), operation)
   }
+  //console.log('--------------transformed operation---------------')
+  //console.log(transformedOperation)
 
-  apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
+  if (!wait) {
+    wait = true
+    apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
+      .then((promises) => {
+        //console.log('-------after save promises--------')
+        //console.log(promises)
+        Promise.all(promises).then( () => {
+          lock.emit('unlocked', transformedOperation)
+        }).catch((err) => {
+          //console.log('something happened: ' + err)
+          throw new Error(err)
+        })
+      })
+  } else {
+    //console.log('---------------new pending operation ------------')
+    //console.log(pendingOperations)
+    pendingOperations.push(transformedOperation)
+    //console.log('------------------------------------')
+    //console.log(pendingOperations)
+  }  
+  //console.log('-----------history------------')
+  //console.log(history)
   history.push(transformedOperation)
-  console.log('-----------history------------')
-  console.log(history)
+  broadcaster.emit('newOp')
   res.send({'ok': 'ok'})
-}
-
-const timeout = (ms, promise) => {
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
-      resolve(JSON.stringify({empty: 'true'}))
-    }, ms)
-    promise.then(resolve, reject)
-  })
-}
-
-const getBroadcast = () => {
-  return timeout(10000, new Promise( (resolve, reject) => {
-    // set timeout
-    broadcaster.on('opReceived', (op) => {
-      resolve(op)
-    }) 
-  }))
 }
 
 function status(req, res, next) {
   const { revisionNr, uid } = req.params
-  
-  // if (activeListeners.indexOf(uid) !== -1) {
-    
-  //   setTimeout(() => res.json({ empty: true }), 10000)
-  //   return;
-  // }
+  var sent = false
 
-  // activeListeners.push(uid)
-
-  // if (revisionNr === history.length) {
-  //   getBroadcast().then((op) => {
-  //     activeListeners.splice(activeListeners.indexOf(uid), 1)
-
-  //     if (typeof op.empty === 'undefined'){
-  //       return res.json({ empty: true })
-  //     }
-
-  //     if (op.origin === uid) {
-  //       res.json(acknowledge)
-  //     } else {
-  //       res.json(op)
-  //     }
-  //   })
-  // }
-
-  if (revisionNr < history.length) {
-    var op = history[revisionNr]
-    if (op.origin === uid) {
-        res.json(acknowledge)
-      } else {
-        res.json(op)
-      }
-      return;
-  } 
-
-  setTimeout(() => res.json({ empty: true }), 10000)
+  if (revisionNr === history.length) {
+    broadcaster.once('newOp', () => {
+      notify(history[revisionNr], uid, res)
+    })
+  } else if (revisionNr < history.length) {
+    notify(history[revisionNr], uid, res)
+  }
+ 
+  setTimeout(() => { 
+    if (!res.headersSent) {
+      broadcaster.removeListener('newOp')
+      res.json({ empty: true })
+    }
+  }, 10000)
   return;
 
 }

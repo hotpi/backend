@@ -18,7 +18,6 @@ const NoteSchema = new mongoose.Schema({
   },
   noteLines: {
     type: Array,
-    required: true,
     default: []
   },
   updatedAt: {
