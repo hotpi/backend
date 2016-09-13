@@ -107,7 +107,6 @@ function status(req, res, next) {
  
   setTimeout(() => { 
     if (!res.headersSent) {
-      broadcaster.removeListener('newOp')
       res.json({ empty: true })
     }
   }, 10000)
