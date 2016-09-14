@@ -48,18 +48,24 @@ export function insertNode(receivedOp) {
     .then((treeLevel) => {
       console.log('-----treeLevel------')
       console.log(treeLevel)
+      var applied = []
+      
+      if (treeLevel.length > 0) {
+        applied = [
+          ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
+          node,
+          ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
+        ]
+      } else {
+        applied = [node]
+      }
 
-      let applied = [
-        ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
-        node,
-        ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
-      ]
 
-      //console.log('-------applied op-------')
-      //console.log(receivedOp)
-      //console.log('-----after applied------')
-      //console.log(applied)
-      // translate back to the type of collection
+      console.log('-------applied op-------')
+      console.log(receivedOp)
+      console.log('-----after applied------')
+      console.log(applied)
+      //translate back to the type of collection
       return saveChanges(newAccessPath, applied, 'insert', node)
     })
     
@@ -117,8 +123,8 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
-            //console.log('------------ new note ------------')
-            //console.log(note)
+            console.log('------------ new note ------------')
+            console.log(note)
 
             var savePromise = note.saveAsync()
 
@@ -141,7 +147,8 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
-            //console.log(noteLine)
+            console.log('------------ new noteline ------------')
+            console.log(noteLine)
 
             var savePromise = noteLine.saveAsync()
 

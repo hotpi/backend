@@ -41,18 +41,37 @@ const notify = (operation, uid, res) => {
   }
 }
 
-lock.on('unlocked', (operation) => {
-  //console.log('------pending operations list------')
-  //console.log(pendingOperations)
+lock.on('unlocked', () => {
+  console.log('------pending operations list------')
+  console.log(pendingOperations)
   if (pendingOperations.length > 0) {
-    //console.log('unlocked, applying next op')
+    console.log('unlocked, applying next op')
     let next = pendingOperations.shift()
-    apply(next.type === 'insert' ? insertNode : deleteNode)(operation)    
+    console.log('---------------wait-------------')
+    console.log(wait)
+
+    if (next.type !== 'no-op') {
+      applyAndNotify(next)    
+    } else {      
+      lock.emit('unlocked') 
+    } 
   }
-  //console.log('---------------wait-------------')
   wait = pendingOperations.length !== 0
-  //console.log(wait)
 })
+
+function applyAndNotify(operation) {
+  apply(operation.type === 'insert' ? insertNode : deleteNode)(operation)
+    .then((promises) => {
+      console.log('-------after save promises--------')
+      console.log(promises)
+      Promise.all(promises).then( () => {
+        lock.emit('unlocked')
+      }).catch((err) => {
+        console.log('something happened: ' + err)
+        throw new Error(err)
+      })
+    })
+}
 
 function receiveOp(req, res, next) {
   const { revisionNr, operation } = req.body
@@ -66,25 +85,15 @@ function receiveOp(req, res, next) {
   //console.log('--------------transformed operation---------------')
   //console.log(transformedOperation)
 
-  if (!wait) {
+  if (!wait && transformedOperation.type !== 'no-op') {
     wait = true
-    apply(transformedOperation.type === 'insert' ? insertNode : deleteNode)(transformedOperation)
-      .then((promises) => {
-        //console.log('-------after save promises--------')
-        //console.log(promises)
-        Promise.all(promises).then( () => {
-          lock.emit('unlocked', transformedOperation)
-        }).catch((err) => {
-          //console.log('something happened: ' + err)
-          throw new Error(err)
-        })
-      })
+    applyAndNotify(operation)
   } else {
-    //console.log('---------------new pending operation ------------')
-    //console.log(pendingOperations)
+    console.log('---------------new pending operation ------------')
+    console.log(pendingOperations)
     pendingOperations.push(transformedOperation)
-    //console.log('------------------------------------')
-    //console.log(pendingOperations)
+    console.log('------------------------------------')
+    console.log(pendingOperations)
   }  
   //console.log('-----------history------------')
   //console.log(history)
@@ -94,19 +103,22 @@ function receiveOp(req, res, next) {
 }
 
 function status(req, res, next) {
+  const broadcast = () => {
+    notify(history[revisionNr], uid, res)
+  }
+
   const { revisionNr, uid } = req.params
   var sent = false
 
   if (revisionNr === history.length) {
-    broadcaster.once('newOp', () => {
-      notify(history[revisionNr], uid, res)
-    })
+    broadcaster.once('newOp', broadcast)
   } else if (revisionNr < history.length) {
     notify(history[revisionNr], uid, res)
   }
  
   setTimeout(() => { 
     if (!res.headersSent) {
+      broadcaster.removeListener('newOp', broadcast)
       res.json({ empty: true })
     }
   }, 10000)

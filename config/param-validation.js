@@ -6,7 +6,7 @@ export default {
     body: {
       operation: Joi.object({
         origin: Joi.number().integer().required(),
-        type: Joi.string().valid('insert', 'delete').required(),
+        type: Joi.string().valid('insert', 'delete', 'no-op').required(),
         node: Joi.alternatives().try(Joi.object(), Joi.string()),
         action: Joi.object().required()
       }).required(),
