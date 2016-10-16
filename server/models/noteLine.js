@@ -60,13 +60,6 @@ const NoteLineSchema = new mongoose.Schema({
 });
 
 /**
- * Add your
- * - pre-save hooks
- * - validations
- * - virtuals
- */
-
-/**
  * Methods
  */
 NoteLineSchema.method({

@@ -56,13 +56,6 @@ const PatientSchema = new mongoose.Schema({
 });
 
 /**
- * Add your
- * - pre-save hooks
- * - validations
- * - virtuals
- */
-
-/**
  * Methods
  */
 PatientSchema.method({

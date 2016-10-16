@@ -31,13 +31,6 @@ const NoteSchema = new mongoose.Schema({
 });
 
 /**
- * Add your
- * - pre-save hooks
- * - validations
- * - virtuals
- */
-
-/**
  * Methods
  */
 NoteSchema.method({

@@ -42,13 +42,13 @@ const notify = (operation, uid, res) => {
 }
 
 lock.on('unlocked', () => {
-  console.log('------pending operations list------')
-  console.log(pendingOperations)
+  // console.log('------pending operations list------')
+  // console.log(pendingOperations)
   if (pendingOperations.length > 0) {
-    console.log('unlocked, applying next op')
+    // console.log('unlocked, applying next op')
     let next = pendingOperations.shift()
-    console.log('---------------wait-------------')
-    console.log(wait)
+    // console.log('---------------wait-------------')
+    // console.log(wait)
 
     if (next.type !== 'no-op') {
       applyAndNotify(next)    
@@ -62,8 +62,8 @@ lock.on('unlocked', () => {
 function applyAndNotify(operation) {
   apply(operation.type === 'insert' ? insertNode : deleteNode)(operation)
     .then((promises) => {
-      console.log('-------after save promises--------')
-      console.log(promises)
+      // console.log('-------after save promises--------')
+      // console.log(promises)
       Promise.all(promises).then( () => {
         lock.emit('unlocked')
       }).catch((err) => {
@@ -89,11 +89,11 @@ function receiveOp(req, res, next) {
     wait = true
     applyAndNotify(operation)
   } else {
-    console.log('---------------new pending operation ------------')
-    console.log(pendingOperations)
+    // console.log('---------------new pending operation ------------')
+    // console.log(pendingOperations)
     pendingOperations.push(transformedOperation)
-    console.log('------------------------------------')
-    console.log(pendingOperations)
+    // console.log('------------------------------------')
+    // console.log(pendingOperations)
   }  
   //console.log('-----------history------------')
   //console.log(history)

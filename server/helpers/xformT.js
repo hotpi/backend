@@ -1,7 +1,7 @@
-function xformT(op1, op2, isServer) {
+function xformT(op1, op2) {
   if (op1.type === 'insert') {
     if (op2.type === 'insert') {
-      return xformTii(op1, op2, isServer);
+      return xformTii(op1, op2);
     }
     if (op2.type === 'delete') {
       return xformTid(op1, op2);
@@ -17,10 +17,10 @@ function xformT(op1, op2, isServer) {
       return xformTdd(op1, op2);
     }
   }
-  return [op1, op2]; //in case of other operation types (no-op)
+  return [op1, op2];
 }
 
-function xformTii(op1, op2, isServer) {
+function xformTii(op1, op2) {
   var tpt = transformationPoint(op1.accessPath, op2.accessPath);
 
   if (effectIndependent(op1.accessPath, op2.accessPath)) {
@@ -85,7 +85,7 @@ function xformTid(op1, op2) {
 
 }
 
-function xformTdd(op1, op2, isServer) {
+function xformTdd(op1, op2) {
   var tpt = transformationPoint(op1.accessPath, op2.accessPath);
 
   if (effectIndependent(op1.accessPath, op2.accessPath)) {

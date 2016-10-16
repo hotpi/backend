@@ -7,13 +7,13 @@ import NoteLine from '../models/noteLine';
 import EventEmitter from 'events';
 
 export function transform(operations, receivedOp) {
-  console.log('--------before transformedOperation----------')
-  console.log(receivedOp)
+  // console.log('--------before transformedOperation----------')
+  // console.log(receivedOp)
   var transformedOperation = operations.reduce( (prev, next) => {
     return xformT(prev[0], next);
   }, [receivedOp, null])
-  console.log('--------after transformedOperation----------')
-  console.log(transformedOperation)
+  // console.log('--------after transformedOperation----------')
+  // console.log(transformedOperation)
   return transformedOperation[0];
 
 }
@@ -41,7 +41,7 @@ export function getAccessPath(objectAccessPath) {
 
 export function insertNode(receivedOp) {
   const { accessPath, node } = receivedOp 
-  console.log(receivedOp)
+  // console.log(receivedOp)
   var newAccessPath = getAccessPath(accessPath) 
   
   return jumpToAccessPath(newAccessPath)
@@ -61,10 +61,10 @@ export function insertNode(receivedOp) {
       }
 
 
-      console.log('-------applied op-------')
-      console.log(receivedOp)
-      console.log('-----after applied------')
-      console.log(applied)
+      // console.log('-------applied op-------')
+      // console.log(receivedOp)
+      // console.log('-----after applied------')
+      // console.log(applied)
       //translate back to the type of collection
       return saveChanges(newAccessPath, applied, 'insert', node)
     })
@@ -123,8 +123,8 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
-            console.log('------------ new note ------------')
-            console.log(note)
+            // console.log('------------ new note ------------')
+            // console.log(note)
 
             var savePromise = note.saveAsync()
 
@@ -147,8 +147,8 @@ function saveChanges(accessPath, changes, operation, node) {
               ...node
             })
 
-            console.log('------------ new noteline ------------')
-            console.log(noteLine)
+            // console.log('------------ new noteline ------------')
+            // console.log(noteLine)
 
             var savePromise = noteLine.saveAsync()
 
@@ -199,7 +199,7 @@ function jumpToAccessPath(accessPath) {
         //console.log('-------------------jumpToAccessPath notes---------------')
         //console.log(notes)
         //console.log('------------------------jumpToAccessPath in accessPath-------------')
-        //console.log(accessPath)
+        // console.log(accessPath)
         if (accessPath.length > 2) {
           return getNoteNoteLines(notes[accessPath[1]].ID).then((noteLines) => ({ patients, notes, noteLines}))
         }

@@ -10,7 +10,6 @@ var nodeModules = {};
 //     .filter(x => ['.bin'].indexOf(x) === -1)
 //     .forEach(mod => { nodeModules[mod] = `commonjs ${mod}`; });
 
-// es5 style alternative
 fs.readdirSync(path.resolve(__dirname, 'node_modules'))
     .filter(function(x) {
         return ['.bin'].indexOf(x) === -1;

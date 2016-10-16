@@ -12,6 +12,7 @@ mongoose.connection.on('error', () => {
   throw new Error(`unable to connect to database: ${config.db}`);
 });
 
+// log info
 const debug = require('debug')('bachelorarbeit-node-server:index');
 console.log(config)
 // listen on port config.port
