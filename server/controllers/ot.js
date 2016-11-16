@@ -9,6 +9,8 @@ import Patient from '../models/patient';
 import Note from '../models/note';
 import NoteLine from '../models/noteLine';
 
+import { otLogger } from '../../config/winston';
+
 const config = require('../../config/env');
 
 const broadcaster = new EventEmitter()
@@ -25,12 +27,8 @@ const acknowledge = {
 
 const notify = (operation, uid, res) => {
   if (!res.headersSent) {
-    /*console.log('-------sending op---------')
-    console.log('----------------')
-    console.log('----------------')
-    console.log('----------------')
-    console.log(operation)
-    console.log(history)*/
+    otLogger.info('-------[BROADCASTER]: Sending op to listening clients---------', { operation: operation, history: history })
+
     if (operation.origin === uid) {
       res.json(acknowledge)
     } else {
@@ -42,14 +40,11 @@ const notify = (operation, uid, res) => {
 }
 
 lock.on('unlocked', () => {
-  console.log('------pending operations list------')
-  console.log(pendingOperations)
+  otLogger.info('--------[LOCK]: Pending operations list------', { pendingOperations: pendingOperations })
   if (pendingOperations.length > 0) {
-    console.log('unlocked, applying next op')
     let next = pendingOperations.shift()
-    console.log('---------------wait-------------')
-    console.log(wait)
-
+    otLogger.info('--------[LOCK]: Unlocked, applying next op------', { nextOperation: next, needsToLockAgain: wait })
+    
     if (next.type !== 'no-op') {
       applyAndNotify(next)    
     } else {      
@@ -62,12 +57,12 @@ lock.on('unlocked', () => {
 function applyAndNotify(operation) {
   apply(operation.type === 'insert' ? insertNode : deleteNode)(operation)
     .then((promises) => {
-      console.log('-------after save promises--------')
-      console.log(promises)
+      otLogger.info('--------[CONTROL ALGORITHM]: Applied---------', { afterSavePromises: promises })
       Promise.all(promises).then( () => {
+        otLogger.info('--------[CONTROL ALGORITHM]: Saving complete---------')
         lock.emit('unlocked')
       }).catch((err) => {
-        console.log('something happened: ' + err)
+        otLogger.info('--------[CONTROL ALGORITHM]: Saving failed---------', { error: new Error(err) })
         throw new Error(err)
       })
     })
@@ -76,27 +71,23 @@ function applyAndNotify(operation) {
 function receiveOp(req, res, next) {
   const { revisionNr, operation } = req.body
   var transformedOperation = operation
-
-  console.log('--------------operation received---------------')
-  console.log(operation)
+  otLogger.info('--------[CONTROL ALGORITHM]: New operation---------', { newOperation: transformedOperation })
+  
   if (revisionNr < history.length) {
+    otLogger.info('--------[CONTROL ALGORITHM]: Operation needs to be transformed---------')
     transformedOperation = transform(history.slice(revisionNr), operation)
+    otLogger.info('--------[CONTROL ALGORITHM]: Operation transformed---------', { transformedOperation: transformedOperation })
   }
-  console.log('--------------transformed operation---------------')
-  console.log(transformedOperation)
 
   if (!wait && transformedOperation.type !== 'no-op') {
     wait = true
     applyAndNotify(operation)
   } else {
-    console.log('---------------new pending operation ------------')
-    console.log(pendingOperations)
     pendingOperations.push(transformedOperation)
-    console.log('------------------------------------')
-    console.log(pendingOperations)
+    otLogger.info('--------[LOCK]: Locked, queueing operation---------', { pendingOperations: pendingOperations })
   }  
-  console.log('-----------history------------')
-  console.log(history)
+  otLogger.info('--------[CONTROL ALGORITHM]: History ---------', { history: history })
+  
   history.push(transformedOperation)
   broadcaster.emit('newOp')
   res.send({'ok': 'ok'})
