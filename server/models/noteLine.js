@@ -76,7 +76,7 @@ NoteLineSchema.statics = {
    */
   get(id) {
     return this.find({ ID: id })
-      .execAsync().then((noteLine) => {
+      .exec().then((noteLine) => {
         if (noteLine[0]) {
           return noteLine[0];
         }
@@ -87,7 +87,7 @@ NoteLineSchema.statics = {
 
   getNoteLineText(id) {
     return this.find({ ID: id })
-      .execAsync().then( (noteLine) => {
+      .exec().then( (noteLine) => {
         if (noteLine[0]) {
           return noteLine[0].text;
         }
@@ -106,14 +106,14 @@ NoteLineSchema.statics = {
     return this.find({}, { _id: 0 })
       .sort({ createdAt: -1 })
       .select('ID text important highlight createdAt updateAt')
-      .execAsync();
+      .exec();
   },
 
   listOfNoteNoteLines(ids) {
     return this.find({ 
       ID: { $in: ids }
     })
-    .execAsync().then( (notelines) => {
+    .exec().then( (notelines) => {
       if (notelines) {
         return notelines;
       }

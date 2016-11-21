@@ -47,7 +47,7 @@ NoteSchema.statics = {
    */
   get(id) {
     return this.find({ ID: id })
-      .execAsync().then((note) => {
+      .exec().then((note) => {
         if (note[0]) {
           return note[0];
         }
@@ -58,7 +58,7 @@ NoteSchema.statics = {
 
   getNoteNoteLines(id) {
     return this.find({ ID: id })
-      .execAsync().then((note) => {
+      .exec().then((note) => {
         if (note[0]) {
           return note[0].noteLines;
         }
@@ -77,14 +77,14 @@ NoteSchema.statics = {
     return this.find({}, { _id: 0 })
       .sort({ createdAt: -1 })
       .select('ID type noteLines createdAt updatedAt')
-      .execAsync();
+      .exec();
   },
 
   listOfPatientNotes(ids) {
     return this.find({ 
         ID: { $in: ids }
       })
-      .execAsync().then( (notes) => {
+      .exec().then( (notes) => {
         if (notes) {
           return notes;
         }

@@ -72,7 +72,7 @@ PatientSchema.statics = {
    */
   get(id) {
     return this.find({ ID: id })
-      .execAsync().then((patient) => {
+      .exec().then((patient) => {
         if (patient[0]) {
           return patient[0];
         }
@@ -83,7 +83,7 @@ PatientSchema.statics = {
 
   getPatientNotes(id) {
     return this.find({ ID: id })
-      .execAsync().then((patient) => {
+      .exec().then((patient) => {
         if (patient[0]) {
           return patient[0].notes;
         }
@@ -103,7 +103,7 @@ PatientSchema.statics = {
     return this.find({}, { _id: 0 })
       .sort({ ID: 1 })
       .select('ID lastName firstName bedNumber clinic station admissionDate dischargeDate birthday notes createdAt updatedAt')
-      .execAsync();
+      .exec();
   }
 };
 

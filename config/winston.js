@@ -20,5 +20,15 @@ export const otLogger = new (winston.Logger)({
   ]
 })
 
+export const debugLogger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({
+      name: 'info-file',
+      filename: 'debug.log',
+      level: 'debug'
+    })
+  ]
+})
+
 export default logger;
 

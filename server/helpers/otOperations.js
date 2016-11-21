@@ -108,14 +108,14 @@ function saveChanges(accessPath, changes, operation, node) {
     })
     .then(({ patients, notes, noteLines }) => {
       if (accessPath.length === 1) {
-        var updatePromise = Patient.update({}, changes, { multi: true, upsert: true, overwrite: true }).execAsync()
+        var updatePromise = Patient.update({}, changes, { multi: true, upsert: true, overwrite: true }).exec()
 
         return [updatePromise, new Promise.resolve()];
       } else if (accessPath.length === 2) {
 
         var updatePromise = Patient.update({ ID: patients[accessPath[0]].ID }, { 
           notes: changes.map(note => note.ID) 
-        }).execAsync()
+        }).exec()
         
         switch (operation) {  
           case  'insert':
@@ -126,11 +126,11 @@ function saveChanges(accessPath, changes, operation, node) {
             // console.log('------------ new note ------------')
             // console.log(note)
 
-            var savePromise = note.saveAsync()
+            var savePromise = note.save()
 
             return [ updatePromise, savePromise ];
           case 'delete':
-            var deletedPromise = Note.remove({ ID: node.ID }).execAsync()
+            var deletedPromise = Note.remove({ ID: node.ID }).exec()
             
             return [ updatePromise, deletedPromise ];
         } 
@@ -139,7 +139,7 @@ function saveChanges(accessPath, changes, operation, node) {
         //console.log('saving Changes of a note')
         var updatePromise = Note.update({ ID: notes[accessPath[1]].ID }, { 
           noteLines: changes.map(noteLine => noteLine.ID)
-        }).execAsync()
+        }).exec()
 
         switch (operation) {
           case 'insert':
@@ -150,11 +150,11 @@ function saveChanges(accessPath, changes, operation, node) {
             // console.log('------------ new noteline ------------')
             // console.log(noteLine)
 
-            var savePromise = noteLine.saveAsync()
+            var savePromise = noteLine.save()
 
             return [ updatePromise, savePromise ];
           case 'delete':
-            var deletedPromise = NoteLine.remove({ ID: node.ID }).execAsync()
+            var deletedPromise = NoteLine.remove({ ID: node.ID }).exec()
             
             return [ updatePromise, deletedPromise ]
         }
@@ -165,7 +165,7 @@ function saveChanges(accessPath, changes, operation, node) {
         }, '')
         var updatePromise = NoteLine.update({ ID: noteLines[accessPath[2]].ID }, {
           text: newText 
-        }).execAsync()
+        }).exec()
         
         return [ updatePromise, new Promise.resolve() ]
 
