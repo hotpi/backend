@@ -1,0 +1,124 @@
+{
+  "noteLines": {
+    "ad7c6e70-4bca-4954-bccd-66569accd0b1": {
+      "ID": "ad7c6e70-4bca-4954-bccd-66569accd0b1",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "Pain in the knee bone after an accident",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "9ecdc8cd-543d-4253-9832-08832b1e4156": {
+      "ID": "9ecdc8cd-543d-4253-9832-08832b1e4156",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "Orthopedic treatment for the correction of the axis with Dr. Müller must be made.",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "9f67b510-3da9-4328-ae83-e72bc67d7f3c": {
+      "ID": "9f67b510-3da9-4328-ae83-e72bc67d7f3c",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "Diet sparse on proteins for the next week is prescribed.",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "d77cf6b0-57ca-40f9-9837-18974c4e1909": {
+      "ID": "d77cf6b0-57ca-40f9-9837-18974c4e1909",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "X-rays in station 20 at 16:00",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "523b06a5-2f7e-4907-9a84-4d3efe8760e0": {
+      "ID": "523b06a5-2f7e-4907-9a84-4d3efe8760e0",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "Painkillers every 2 hours",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "336d5e3d-4dd0-4375-b63e-d926e66263b3": {
+      "ID": "336d5e3d-4dd0-4375-b63e-d926e66263b3",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "c3f95806-c1dd-493c-9093-39a29da3b992": {
+      "ID": "c3f95806-c1dd-493c-9093-39a29da3b992",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "9e62cebf-110a-4eae-bf60-758cdbc9aa93": {
+      "ID": "9e62cebf-110a-4eae-bf60-758cdbc9aa93",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "2dc74e00-6cb0-49ca-a9f0-f5c069a0920c": {
+      "ID": "2dc74e00-6cb0-49ca-a9f0-f5c069a0920c",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0"
+      }
+    },
+    "0410b636-824c-49be-b0f7-f33c5f0df80a": {
+      "ID": "0410b636-824c-49be-b0f7-f33c5f0df80a",
+      "createdAt": 1472134487120,
+      "updatedAt": 1472134487120,
+      "text": "",
+      "important": {
+        "set": false,"color": "grey","value": "0"
+      },
+      "highlight": {
+        "set": false,"color": "grey","value": "0" 
+      }
+    }
+  }
+}
