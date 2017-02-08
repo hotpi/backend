@@ -6,6 +6,8 @@ import Note from '../models/note';
 import NoteLine from '../models/noteLine';
 import EventEmitter from 'events';
 
+import { patients, notes, noteLines } from '../controllers/ot';
+
 export function transform(operations, receivedOp) {
   // console.log('--------before transformedOperation----------')
   // console.log(receivedOp)
@@ -44,52 +46,47 @@ export function insertNode(receivedOp) {
   // console.log(receivedOp)
   var newAccessPath = getAccessPath(accessPath) 
   
-  return jumpToAccessPath(newAccessPath)
-    .then((treeLevel) => {
-      console.log('-----treeLevel------')
-      console.log(treeLevel)
-      var applied = []
-      
-      if (treeLevel.length > 0) {
-        applied = [
-          ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
-          node,
-          ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
-        ]
-      } else {
-        applied = [node]
-      }
-
+  var treeLevel = jumpToAccessPath(newAccessPath)
+  console.log(treeLevel)
+     
+  if (treeLevel.length > 0) {
+    treeLevel = [
+      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
+      node,
+      ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
+    ] 
+  } else {
+    treeLevel = [node]
+  }
+  console.log(treeLevel)
 
       // console.log('-------applied op-------')
       // console.log(receivedOp)
       // console.log('-----after applied------')
       // console.log(applied)
       //translate back to the type of collection
-      return saveChanges(newAccessPath, applied, 'insert', node)
-    })
-    
+      return; //saveChanges(newAccessPath, applied, 'insert', node)
 } 
 
 export function deleteNode(receivedOp) {
   const { accessPath } = receivedOp 
 
   var newAccessPath = getAccessPath(accessPath)
+  var treeLevel = jumpToAccessPath(newAccessPath)
+  console.log(treeLevel)
 
-  return jumpToAccessPath(newAccessPath)
-    .then((treeLevel) => {
-      let deletedNode = treeLevel[newAccessPath[newAccessPath.length-1]]
-      
-      let applied = [
-        ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
-        ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
-        ]
-      
-      return saveChanges(newAccessPath, applied, 'delete', deletedNode)
-    })
+  if (treeLevel.length > 0) {
+    treeLevel = [
+    ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
+    ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
+    ]
+  }
+  console.log(treeLevel)
+
+  return; //saveChanges(newAccessPath, applied, 'delete', deletedNode)
 }
 
-function saveChanges(accessPath, changes, operation, node) {
+/*function saveChanges(accessPath, changes, operation, node) {
    return getPatientList().then(patients => {
       if (accessPath.length > 1) {
         return getPatientNotes(patients[accessPath[0]].ID).then(notes => ({ patients, notes }))      
@@ -171,11 +168,26 @@ function saveChanges(accessPath, changes, operation, node) {
 
       }       
     })
-}
+}*/
 
 
 // return level of the tree with their elements AND the name of its collection
 function jumpToAccessPath(accessPath) {
+   return accessPath.reduce((prev, curr, index) => {
+      switch (index) {
+        case 0:
+          return Object.keys(patients).sort((a, b) => sortAlphabetically(a, b))
+        case 1: 
+          return patients[prev[accessPath[0]]].notes
+        case 2: 
+          return notes[prev[accessPath[1]]].noteLines
+        case 3:
+          return noteLines[prev[accessPath[2]]].text
+      }
+    }, {})
+  /*
+
+
   var patients = []
   var notes = []
   var noteLines = []
@@ -255,10 +267,10 @@ function jumpToAccessPath(accessPath) {
             //throw error
         }
       })
-      
+      */
 
 }
-
+/*
 function getPatientList() {
   const patientPromise = Patient.list().then((patients) => {
     return patients
@@ -295,4 +307,14 @@ function getNoteLineText(noteLineId) {
   })
 
   return noteLinesTextPromise;
+}*/
+
+const sortAlphabetically = (a, b) => {
+  if (a.ID < b.ID) {
+    return -1;
+  } else if (a.ID > b.ID) {
+    return 1;
+  } 
+
+  return 0;
 }

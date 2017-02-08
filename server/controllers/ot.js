@@ -10,15 +10,18 @@ import Note from '../models/note';
 import NoteLine from '../models/noteLine';
 import OpHistory from '../models/ot';
 
-import { otLogger } from '../../config/winston';
+// import { otLogger } from '../../config/winston';
 import { debugLogger } from '../../config/winston';
 
 const config = require('../../config/env');
-
 const broadcaster = new EventEmitter()
 const lock = new EventEmitter()
 var history = []
 var uid = 0
+
+export var patients = require('../../patientsUnified').patients
+export var notes = require('../../notesUnified').notes
+export var noteLines = require('../../noteLinesUnified').noteLines
 
 OpHistory.getLatest().then( (latestHistory) => {
   debugLogger.debug('-latestHistory-', { latestHistory: latestHistory[0].history })
@@ -46,7 +49,7 @@ const acknowledge = {
 
 const notify = (operation, uid, res) => {
   if (!res.headersSent) {
-    otLogger.info('[BROADCASTER]: Sending op to listening clients', { operation: operation, history: history })
+    // otLogger.info('[BROADCASTER]: Sending op to listening clients', { operation: operation, history: history })
 
     if (operation.origin === uid) {
       res.json(acknowledge)
@@ -59,10 +62,10 @@ const notify = (operation, uid, res) => {
 }
 
 lock.on('unlocked', () => {
-  otLogger.info('[LOCK]: Pending operations list', { pendingOperations: pendingOperations })
+  // otLogger.info('[LOCK]: Pending operations list', { pendingOperations: pendingOperations })
   if (pendingOperations.length > 0) {
     let next = pendingOperations.shift()
-    otLogger.info('[LOCK]: Unlocked, applying next op', { nextOperation: next, needsToLockAgain: wait })
+    // otLogger.info('[LOCK]: Unlocked, applying next op', { nextOperation: next, needsToLockAgain: wait })
     
     if (next.type !== 'no-op') {
       applyAndNotify(next)    
@@ -75,27 +78,31 @@ lock.on('unlocked', () => {
 
 function applyAndNotify(operation) {
   apply(operation.type === 'insert' ? insertNode : deleteNode)(operation)
-    .then((promises) => {
-      otLogger.info('[CONTROL ALGORITHM]: Applied', { afterSavePromises: promises })
-      Promise.all(promises).then( () => {
-        otLogger.info('[CONTROL ALGORITHM]: Saving complete')
-        lock.emit('unlocked')
-      }).catch((err) => {
-        otLogger.info('[CONTROL ALGORITHM]: Saving failed', { error: new Error(err) })
-        throw new Error(err)
-      })
-    })
+  lock.emit('unlocked')
+  history.push(operation)
+  broadcaster.emit('newOp')
+        // otLogger.debug('---history loaded----', { history: history } )
+    // .then((promises) => {
+      // otLogger.info('[CONTROL ALGORITHM]: Applied', { afterSavePromises: promises })
+      // Promise.all(promises).then( () => {
+        // otLogger.info('[CONTROL ALGORITHM]: Saving complete')
+        // otLogger.info('[CONTROL ALGORITHM]: History ', { history: history })
+      // }).catch((err) => {
+        // otLogger.info('[CONTROL ALGORITHM]: Saving failed', { error: new Error(err) })
+        // throw new Error(err)
+      // })
+    // })
 }
 
 function receiveOp(req, res, next) {
   const { revisionNr, operation } = req.body
   var transformedOperation = operation
-  otLogger.info('[CONTROL ALGORITHM]: New operation', { newOperation: transformedOperation })
+  // otLogger.info('[CONTROL ALGORITHM]: New operation', { newOperation: transformedOperation })
   
   if (revisionNr < history.length) {
-    otLogger.info('[CONTROL ALGORITHM]: Operation needs to be transformed')
+    // otLogger.info('[CONTROL ALGORITHM]: Operation needs to be transformed')
     transformedOperation = transform(history.slice(revisionNr), operation)
-    otLogger.info('[CONTROL ALGORITHM]: Operation transformed', { transformedOperation: transformedOperation })
+    // otLogger.info('[CONTROL ALGORITHM]: Operation transformed', { transformedOperation: transformedOperation })
   }
 
   if (!wait && transformedOperation.type !== 'no-op') {
@@ -103,13 +110,11 @@ function receiveOp(req, res, next) {
     applyAndNotify(operation)
   } else {
     pendingOperations.push(transformedOperation)
-    otLogger.info('[LOCK]: Locked, queueing operation', { pendingOperations: pendingOperations })
+    // otLogger.info('[LOCK]: Locked, queueing operation', { pendingOperations: pendingOperations })
   }  
-  otLogger.debug('---history loaded----', { history: history } )
-  history.push(transformedOperation)
+  
 
-  otLogger.info('[CONTROL ALGORITHM]: History ', { history: history })
-  broadcaster.emit('newOp')
+  
   res.send({'ok': 'ok'})
 }
 
@@ -138,6 +143,17 @@ function status(req, res, next) {
 }
 
 function initialState(req, res, next) {
+  console.log('hier')
+  const response = {
+    patients,
+    notes,
+    noteLines
+  }
+
+  res.json(response)
+}
+
+/*function initialState(req, res, next) {
   Patient.list().then((patients) => {
       return Note.list().then((notes) => ({ patients, notes }))
     })
@@ -155,7 +171,7 @@ function initialState(req, res, next) {
       }
       res.json(response)
     })
-}
+}*/
 
 function formatResponse(objectToFormat) {
   const formattedArray = objectToFormat.map( object => {
