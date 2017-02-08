@@ -23,10 +23,10 @@ export var patients = require('../../patientsUnified').patients
 export var notes = require('../../notesUnified').notes
 export var noteLines = require('../../noteLinesUnified').noteLines
 
-OpHistory.getLatest().then( (latestHistory) => {
-  debugLogger.debug('-latestHistory-', { latestHistory: latestHistory[0].history })
-  history = latestHistory[0].history || []
-}).catch( (err) => { debugLogger.debug('error', { error: err })})
+//OpHistory.getLatest().then( (latestHistory) => {
+  //debugLogger.debug('-latestHistory-', { latestHistory: latestHistory[0].history })
+  //history = /*latestHistory[0].history || */[]
+//}).catch( (err) => { debugLogger.debug('error', { error: err })})
 
 setInterval( () => {
   debugLogger.debug('-history in RAM-', { history: history })

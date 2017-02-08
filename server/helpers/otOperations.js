@@ -49,7 +49,7 @@ export function insertNode(receivedOp) {
   var treeLevel = jumpToAccessPath(newAccessPath)
   console.log(treeLevel)
      
-  if (treeLevel.length > 0) {
+  if (treeLevel) {
     treeLevel = [
       ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
       node,
@@ -176,10 +176,20 @@ function jumpToAccessPath(accessPath) {
    return accessPath.reduce((prev, curr, index) => {
       switch (index) {
         case 0:
-          return Object.keys(patients).sort((a, b) => sortAlphabetically(a, b))
+          console.log('patients: ', patients)
+          console.log('patients\' keys ', Object.keys(patients))
+          let patientsKeys = Object.keys(patients)
+          console.log('sorted patients: ', patientsKeys.sort((a, b) => sortAlphabetically(a, b)))
+          return patientsKeys.sort((a, b) => sortAlphabetically(a, b))
         case 1: 
+          console.log('prev: ', prev)
+          console.log(patients[prev[accessPath[0]]])
           return patients[prev[accessPath[0]]].notes
         case 2: 
+
+          console.log('prev: ', prev)
+          console.log('notes: ', notes)
+          console.log(notes[prev[accessPath[1]]])
           return notes[prev[accessPath[1]]].noteLines
         case 3:
           return noteLines[prev[accessPath[2]]].text
@@ -310,9 +320,9 @@ function getNoteLineText(noteLineId) {
 }*/
 
 const sortAlphabetically = (a, b) => {
-  if (a.ID < b.ID) {
+  if (a < b) {
     return -1;
-  } else if (a.ID > b.ID) {
+  } else if (a > b) {
     return 1;
   } 
 
