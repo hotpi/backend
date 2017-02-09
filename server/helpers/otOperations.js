@@ -55,6 +55,10 @@ export function insertNode(receivedOp) {
       node,
       ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
     ] 
+  } else if (treeLevel && newAccessPath.length === 4) {
+    treeLevel = treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1) + 
+    node +
+      treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1) 
   } else if (treeLevel && typeof node.ID !== undefined) {
     treeLevel = [
       ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
@@ -65,6 +69,7 @@ export function insertNode(receivedOp) {
   else {
     treeLevel = [node]
   }
+  console.log(node)
   console.log(treeLevel)
   saveChanges(newAccessPath, treeLevel, node)
 
@@ -73,7 +78,7 @@ export function insertNode(receivedOp) {
       // console.log('-----after applied------')
       // console.log(applied)
       //translate back to the type of collection
-      return; //saveChanges(newAccessPath, applied, 'insert', node)
+  return; //saveChanges(newAccessPath, applied, 'insert', node)
 } 
 
 export function deleteNode(receivedOp) {
@@ -83,12 +88,16 @@ export function deleteNode(receivedOp) {
   var treeLevel = jumpToAccessPath(newAccessPath)
   console.log(treeLevel)
 
-  if (treeLevel.length > 0) {
+  if (newAccessPath.length < 4) {
     treeLevel = [
-    ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
-    ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
+      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
+      ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
     ]
+  } else {
+    treeLevel = treeLevel.slice(0, newAccessPath[newAccessPath.length-1]) +
+      treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1)
   }
+
   console.log(treeLevel)
   saveChanges(newAccessPath, treeLevel)
   return; //saveChanges(newAccessPath, applied, 'delete', deletedNode)
