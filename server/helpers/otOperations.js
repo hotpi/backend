@@ -48,17 +48,25 @@ export function insertNode(receivedOp) {
   
   var treeLevel = jumpToAccessPath(newAccessPath)
   console.log(treeLevel)
-     
-  if (treeLevel) {
+  
+  if (treeLevel && typeof node.ID === undefined) {
     treeLevel = [
       ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
       node,
       ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
     ] 
-  } else {
+  } else if (treeLevel && typeof node.ID !== undefined) {
+    treeLevel = [
+      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
+      node.ID,
+      ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
+    ] 
+  } 
+  else {
     treeLevel = [node]
   }
   console.log(treeLevel)
+  saveChanges(newAccessPath, treeLevel, node)
 
       // console.log('-------applied op-------')
       // console.log(receivedOp)
@@ -82,7 +90,7 @@ export function deleteNode(receivedOp) {
     ]
   }
   console.log(treeLevel)
-
+  saveChanges(newAccessPath, treeLevel)
   return; //saveChanges(newAccessPath, applied, 'delete', deletedNode)
 }
 
@@ -170,26 +178,75 @@ export function deleteNode(receivedOp) {
     })
 }*/
 
+function saveChanges(accessPath, changes, newNode) {
+  accessPath.reduce((prev, curr, index) => {
+    switch (index) {
+      case 0:
+        if (accessPath.length === 1) {
+          if (!newNode) {
+            delete patients[changes[accessPath[0]]]
+            return Object.keys(patients).sort((a, b) => sortAlphabetically(a, b))
+          }
+
+          patients[changes[accessPath[0]]] = newNode
+        }
+        return Object.keys(patients).sort((a, b) => sortAlphabetically(a, b))
+      case 1:
+        if (accessPath.length === 2) {
+          patients[prev[accessPath[0]]].notes = changes
+          console.log('prev: ', prev)
+          console.log('notes b4: ', notes)
+          if (!newNode) {
+            delete notes[changes[accessPath[1]]]
+            return patients[prev[accessPath[0]]].notes
+          }
+
+          notes[changes[accessPath[1]]] = newNode
+          console.log('patients: ', patients)
+          console.log('notes after: ', notes)
+        }
+
+        return patients[prev[accessPath[0]]].notes
+      case 2:
+        if (accessPath.length === 3) {
+          notes[prev[accessPath[1]]].noteLines = changes
+
+          console.log('prev: ', prev)
+          console.log('noteLines b4: ', noteLines)
+          if (!newNode) {
+            delete noteLines[changes[accessPath[2]]]
+            return notes[prev[accessPath[1]]].noteLines
+          }
+
+          noteLines[changes[accessPath[2]]] = newNode
+
+          console.log('notes: ', notes)
+          console.log('notelines after: ', noteLines)
+        }
+        return notes[prev[accessPath[1]]].noteLines
+      case 3:
+        noteLines[prev[accessPath[2]]].text = changes
+/*
+        if (!newNode) {
+          delete noteLines[changes[accessPath[3]]]
+          return noteLines[prev[accessPath[2]]].text
+        }
+
+        noteLines[changes[accessPath[2]]] = newNode*/
+        return noteLines[prev[accessPath[2]]].text
+    }
+  }, {})
+}
 
 // return level of the tree with their elements AND the name of its collection
 function jumpToAccessPath(accessPath) {
    return accessPath.reduce((prev, curr, index) => {
       switch (index) {
         case 0:
-          console.log('patients: ', patients)
-          console.log('patients\' keys ', Object.keys(patients))
-          let patientsKeys = Object.keys(patients)
-          console.log('sorted patients: ', patientsKeys.sort((a, b) => sortAlphabetically(a, b)))
-          return patientsKeys.sort((a, b) => sortAlphabetically(a, b))
+          return Object.keys(patients).sort((a, b) => sortAlphabetically(a, b))
         case 1: 
-          console.log('prev: ', prev)
-          console.log(patients[prev[accessPath[0]]])
           return patients[prev[accessPath[0]]].notes
         case 2: 
-
-          console.log('prev: ', prev)
-          console.log('notes: ', notes)
-          console.log(notes[prev[accessPath[1]]])
           return notes[prev[accessPath[1]]].noteLines
         case 3:
           return noteLines[prev[accessPath[2]]].text

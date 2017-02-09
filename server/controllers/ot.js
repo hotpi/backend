@@ -28,9 +28,9 @@ export var noteLines = require('../../noteLinesUnified').noteLines
   //history = /*latestHistory[0].history || */[]
 //}).catch( (err) => { debugLogger.debug('error', { error: err })})
 
-setInterval( () => {
-  debugLogger.debug('-history in RAM-', { history: history })
-  debugLogger.debug('-latestRevisionNumber in RAM-', { revisionNumber: history.length })
+/*setInterval( () => {
+  //debugLogger.debug('-history in RAM-', { history: history })
+  //debugLogger.debug('-latestRevisionNumber in RAM-', { revisionNumber: history.length })
 
   let db = new OpHistory({
     history: history,
@@ -38,7 +38,7 @@ setInterval( () => {
   })
 
   db.save()
-}, 5000)
+}, 5000)*/
   
 const pendingOperations = []
 var wait = false
