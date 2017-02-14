@@ -10,7 +10,7 @@ import Note from '../models/note';
 import NoteLine from '../models/noteLine';
 import OpHistory from '../models/ot';
 
-// import { otLogger } from '../../config/winston';
+import { otLogger } from '../../config/winston';
 import { debugLogger } from '../../config/winston';
 
 const config = require('../../config/env');
@@ -49,7 +49,7 @@ const acknowledge = {
 
 const notify = (operation, uid, res) => {
   if (!res.headersSent) {
-    // otLogger.info('[BROADCASTER]: Sending op to listening clients', { operation: operation, history: history })
+    otLogger.info('Broadcasting operation', { operation: operation, history: history })
 
     if (operation.origin === uid) {
       res.json(acknowledge)
@@ -65,10 +65,10 @@ lock.on('unlocked', () => {
   // otLogger.info('[LOCK]: Pending operations list', { pendingOperations: pendingOperations })
   if (pendingOperations.length > 0) {
     let next = pendingOperations.shift()
-    // otLogger.info('[LOCK]: Unlocked, applying next op', { nextOperation: next, needsToLockAgain: wait })
+    otLogger.info('Next operation', { nextOperation: next })
     
-    if (next.type !== 'no-op') {
-      applyAndNotify(next)    
+    if (next.operation.type !== 'no-op') {
+      transformApplyAddAndBroadcast(next.operation, next.revisionNr)    
     } else {      
       lock.emit('unlocked') 
     } 
@@ -76,7 +76,12 @@ lock.on('unlocked', () => {
   wait = pendingOperations.length !== 0
 })
 
-function applyAndNotify(operation) {
+function transformApplyAddAndBroadcast(operation, revisionNr) {
+  if (revisionNr < history.length) {
+      // otLogger.info('[CONTROL ALGORITHM]: Operation needs to be transformed')
+    var transformedOperation = transform(history.slice(revisionNr), operation)
+      // otLogger.info('[CONTROL ALGORITHM]: Operation transformed', { transformedOperation: transformedOperation })
+  }
   apply(operation.type === 'insert' ? insertNode : deleteNode)(operation)
   lock.emit('unlocked')
   history.push(operation)
@@ -97,29 +102,21 @@ function applyAndNotify(operation) {
 function receiveOp(req, res, next) {
   const { revisionNr, operation } = req.body
   var transformedOperation = operation
-  // otLogger.info('[CONTROL ALGORITHM]: New operation', { newOperation: transformedOperation })
-  
-  if (revisionNr < history.length) {
-    // otLogger.info('[CONTROL ALGORITHM]: Operation needs to be transformed')
-    transformedOperation = transform(history.slice(revisionNr), operation)
-    // otLogger.info('[CONTROL ALGORITHM]: Operation transformed', { transformedOperation: transformedOperation })
-  }
-
+  otLogger.info('New operation:', { newOperation: transformedOperation })
+  otLogger.info('History:', { history })
   if (!wait && transformedOperation.type !== 'no-op') {
     wait = true
-    applyAndNotify(operation)
+    transformApplyAddAndBroadcast(operation, revisionNr)
   } else {
-    pendingOperations.push(transformedOperation)
-    // otLogger.info('[LOCK]: Locked, queueing operation', { pendingOperations: pendingOperations })
-  }  
-  
-
-  
+    otLogger.info('Queueing operation', { pendingOperations: pendingOperations })
+    pendingOperations.push({ operation: transformedOperation, revisionNr })
+  }    
   res.send({'ok': 'ok'})
 }
 
 function status(req, res, next) {
   const broadcast = () => {
+    otLogger.info('Person ' + uid + ' asking for operation: ' + revisionNr, { operation: history[revisionNr] })
     notify(history[revisionNr], uid, res)
   }
 
@@ -132,7 +129,7 @@ function status(req, res, next) {
     notify(history[revisionNr], uid, res)
   }
  
-  setTimeout(() => { 
+  setTimeout(()  => { 
     if (!res.headersSent) {
       broadcaster.removeListener('newOp', broadcast)
       res.json({ empty: true })

@@ -14,6 +14,7 @@ export function transform(operations, receivedOp) {
   var transformedOperation = operations.reduce( (prev, next) => {
     return xformT(prev[0], next);
   }, [receivedOp, null])
+  console.log('--transformed--')
   // console.log('--------after transformedOperation----------')
   // console.log(transformedOperation)
   return transformedOperation[0];
@@ -51,19 +52,19 @@ export function insertNode(receivedOp) {
   
   if (treeLevel && typeof node.ID === undefined) {
     treeLevel = [
-      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
+      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
       node,
-      ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
+      ...treeLevel.slice(newAccessPath[newAccessPath.length-1]),
     ] 
   } else if (treeLevel && newAccessPath.length === 4) {
-    treeLevel = treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1) + 
+    treeLevel = treeLevel.slice(0, newAccessPath[newAccessPath.length-1]) + 
     node +
-      treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1) 
+      treeLevel.slice(newAccessPath[newAccessPath.length-1]) 
   } else if (treeLevel && typeof node.ID !== undefined) {
     treeLevel = [
-      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1] + 1),
+      ...treeLevel.slice(0, newAccessPath[newAccessPath.length-1]),
       node.ID,
-      ...treeLevel.slice(newAccessPath[newAccessPath.length-1] + 1),
+      ...treeLevel.slice(newAccessPath[newAccessPath.length-1]),
     ] 
   } 
   else {
