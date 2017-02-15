@@ -50,7 +50,7 @@ const acknowledge = {
 const notify = (operation, uid, res) => {
   if (!res.headersSent) {
     otLogger.info('Broadcasting operation', { operation: operation, history: history })
-
+    console.log('operation: ', operation)
     if (operation.origin === uid) {
       res.json(acknowledge)
     } else {
@@ -140,7 +140,6 @@ function status(req, res, next) {
 }
 
 function initialState(req, res, next) {
-  console.log('hier')
   const response = {
     patients,
     notes,
